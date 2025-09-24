@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strategic Keyword Analysis Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7fafc;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .radio-label {
+            transition: all 0.2s ease-in-out;
+        }
+        .radio-label:hover {
+            transform: translateY(-2px);
+        }
+        input:checked + .radio-label {
+            border-color: #4f46e5;
+            color: #4f46e5;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+        textarea {
+            resize: vertical;
+        }
+        .keyword-header {
+            position: sticky;
+            top: 49px; /* Height of the main table header */
+            z-index: 10;
+        }
+        .main-header {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+        .modal-overlay {
+            transition: opacity 0.3s ease;
+        }
+        .modal-content {
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .loader {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #4f46e5;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+    <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-6xl">
+
+        <header class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Strategic Keyword Analysis Tool</h1>
+            <p class="mt-2 text-md sm:text-lg text-gray-600">Analyze keywords across regions and generate targeted content ideas.</p>
+        </header>
+
+        <main class="bg-white p-6 sm:p-8 rounded-2xl shadow-lg border border-gray-200">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <label for="keyword-input" class="block text-lg font-semibold mb-2 text-gray-700"><i class="fas fa-keyboard mr-2 text-indigo-500"></i>Enter Keywords</label>
+                    <textarea id="keyword-input" rows="10" placeholder="what is EEXI&#10;best electric cars 2024&#10;how to bake sourdough bread" class="w-full h-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-shadow duration-200 custom-scrollbar"></textarea>
+                </div>
+                <div>
+                    <div class="mb-4">
+                        <label class="block text-lg font-semibold mb-2 text-gray-700"><i class="fas fa-bullseye mr-2 text-indigo-500"></i>Refine AI Suggestions (Optional)</label>
+                        <p class="text-sm text-gray-500 mb-3">Provide context for smarter keyword ideas.</p>
+                        <div class="space-y-3">
+                            <input type="text" id="target-url" placeholder="Your Website URL (e.g., https://...)" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            <input type="text" id="focus-topics" placeholder="Focus Topics (e.g., maritime regulations)" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            <input type="number" id="domain-authority" placeholder="Domain Authority (e.g., 25)" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 mb-6">
+                <label class="block text-lg font-semibold mb-3 text-gray-700"><i class="fas fa-globe-americas mr-2 text-indigo-500"></i>Select Regions</label>
+                <div id="region-list" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 max-h-64 overflow-y-auto p-4 border border-gray-200 rounded-lg custom-scrollbar"></div>
+            </div>
+
+            <div class="text-center">
+                <button id="runAnalysisBtn" class="w-full sm:w-auto bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition-all duration-300 transform hover:scale-105"><i class="fas fa-cogs mr-2"></i>Generate Bulk Analysis</button>
+            </div>
+             
+            <div id="status-message" class="mt-6 text-center p-4 bg-yellow-100 text-yellow-800 border border-yellow-200 rounded-lg hidden fade-in"></div>
+        </main>
+        
+        <section id="results-container" class="mt-8 hidden fade-in"></section>
+
+        <footer class="text-center mt-8 text-gray-500 text-sm">
+            <p>&copy; 2024 AI Search Analysis Tool. Use responsibly.</p>
+        </footer>
+    </div>
+
+    <!-- Modals Container -->
+    <div id="modal-container"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const keywordInput = document.getElementById('keyword-input');
+            const domainAuthorityInput = document.getElementById('domain-authority');
+            const targetUrlInput = document.getElementById('target-url');
+            const focusTopicsInput = document.getElementById('focus-topics');
+            const regionList = document.getElementById('region-list');
+            const runAnalysisBtn = document.getElementById('runAnalysisBtn');
+            const statusMessage = document.getElementById('status-message');
+            const resultsContainer = document.getElementById('results-container');
+            const modalContainer = document.getElementById('modal-container');
+
+            const regions = [
+                { name: 'United States', code: 'us', flag: '🇺🇸' }, { name: 'United Kingdom', code: 'gb', flag: '🇬🇧' },
+                { name: 'Canada', code: 'ca', flag: '🇨🇦' }, { name: 'Australia', code: 'au', flag: '🇦🇺' },
+                { name: 'Germany', code: 'de', flag: '🇩🇪' }, { name: 'France', code: 'fr', flag: '🇫🇷' },
+                { name: 'Japan', code: 'jp', flag: '🇯🇵' }, { name: 'India', code: 'in', flag: '🇮🇳' },
+                { name: 'Brazil', code: 'br', flag: '🇧🇷' }, { name: 'South Africa', code: 'za', flag: '🇿🇦' },
+                { name: 'South Korea', code: 'kr', flag: '🇰🇷' }, { name: 'Mexico', code: 'mx', flag: '🇲🇽' },
+                { name: 'Italy', code: 'it', flag: '🇮🇹' }, { name: 'Spain', code: 'es', flag: '🇪🇸' },
+                { name: 'Netherlands', code: 'nl', flag: '🇳🇱' }, { name: 'Sweden', code: 'se', flag: '🇸🇪' },
+                { name: 'Singapore', code: 'sg', flag: '🇸🇬' }, { name: 'New Zealand', code: 'nz', flag: '🇳🇿' },
+                { name: 'Ireland', code: 'ie', flag: '🇮🇪' }, { name: 'Switzerland', code: 'ch', flag: '🇨🇭' }
+            ];
+
+            regions.forEach(region => {
+                const label = document.createElement('label');
+                label.className = 'flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 cursor-pointer transition-colors';
+                label.innerHTML = `<input type="checkbox" class="form-checkbox h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" value="${region.code}" data-name="${region.name}" data-flag="${region.flag}" checked><span class="text-gray-700">${region.flag} ${region.name}</span>`;
+                regionList.appendChild(label);
+            });
+            
+            // --- AI SIMULATION FUNCTION ---
+            async function getAISuggestions(keyword, domainAuthority, targetUrl, focusTopics) {
+                const topicsValue = (focusTopics || '').toLowerCase();
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                let mockResponseText;
+                const lowerKeyword = keyword.toLowerCase();
+
+                if (lowerKeyword.includes('eexi') && topicsValue.includes('maritime')) {
+                     mockResponseText = `EEXI calculation methodology\nIMO EEXI compliance guide\nwhat is the difference between EEXI and CII\nEEXI regulation for bulk carriers\nhow to improve ship EEXI rating`;
+                } else if (lowerKeyword.includes("car") && (topicsValue.includes('automotive') || topicsValue === '')) {
+                     mockResponseText = `best family electric SUV\naffordable long-range EVs\nEV maintenance vs gas cars\nwhat to know before buying an electric car\nhow does regenerative braking work`;
+                } else {
+                    let suggestions = [];
+                    const keywordBody = keyword.replace(/^(what is|how to|best|top|why is)\s*/i, '').trim();
+
+                    if (lowerKeyword.startsWith('what is') || lowerKeyword.startsWith('why is')) {
+                        suggestions = [ `explain ${keywordBody} in simple terms`, `history of ${keywordBody}`, `applications for ${keywordBody}`, `${keywordBody} vs [related topic]`, `future of ${keywordBody}`];
+                    } else if (lowerKeyword.startsWith('how to')) {
+                        suggestions = [ `step-by-step guide to ${keywordBody}`, `common mistakes when ${keywordBody}`, `tools needed for ${keywordBody}`, `troubleshooting ${keywordBody} issues`, `advanced techniques for ${keywordBody}`];
+                    } else if (lowerKeyword.startsWith('best') || lowerKeyword.startsWith('top')) {
+                        suggestions = [ `affordable ${keywordBody} options`, `luxury ${keywordBody} brands`, `${keywordBody} reviews 2025`, `how to choose the right ${keywordBody}`, `comparing ${keywordBody} models`];
+                    } else {
+                        if (topicsValue.includes('maritime')) {
+                             suggestions = [`shipping logistics for ${keywordBody}`, `${keywordBody} in the maritime industry`, `import/export regulations for ${keywordBody}`, `cost of shipping ${keywordBody}`, `best practices for transporting ${keywordBody}`];
+                        } else {
+                            suggestions = [`${keywordBody} for professionals`, `the future of ${keywordBody}`, `${keywordBody} impact on society`, `learning resources for ${keywordBody}`, `ethical considerations of ${keywordBody}`];
+                        }
+                    }
+                    mockResponseText = suggestions.join('\n');
+                }
+                return { candidates: [{ content: { parts: [{ text: mockResponseText }] } }] };
+             }
+            
+            // --- MODAL HANDLING ---
+            function createModal(id, title, content, footer) {
+                const modal = document.createElement('div');
+                modal.id = id;
+                modal.className = 'fixed inset-0 z-50 flex items-center justify-center';
+                modal.innerHTML = `
+                    <div class="absolute inset-0 bg-black bg-opacity-50 modal-overlay"></div>
+                    <div class="modal-content bg-white rounded-lg shadow-xl p-6 m-4 max-w-2xl w-full transform scale-95 opacity-0">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-xl font-bold text-gray-800">${title}</h3>
+                            <button class="text-gray-500 hover:text-gray-800 text-3xl leading-none close-modal-btn">&times;</button>
+                        </div>
+                        <div class="modal-body">${content}</div>
+                        <div class="modal-footer mt-6 text-right">${footer || ''}</div>
+                    </div>
+                `;
+                modalContainer.appendChild(modal);
+
+                const overlay = modal.querySelector('.modal-overlay');
+                const closeBtn = modal.querySelector('.close-modal-btn');
+                
+                const closeModal = () => {
+                    modal.querySelector('.modal-content').classList.add('opacity-0', 'scale-95');
+                     setTimeout(() => modal.remove(), 300);
+                     document.body.classList.remove('overflow-hidden');
+                };
+
+                overlay.addEventListener('click', closeModal);
+                closeBtn.addEventListener('click', closeModal);
+                modal.querySelector('.modal-footer').addEventListener('click', (e) => {
+                    if(e.target.classList.contains('close-modal-btn')) closeModal();
+                });
+
+                document.body.classList.add('overflow-hidden');
+                setTimeout(() => {
+                    modal.querySelector('.modal-content').classList.remove('opacity-0', 'scale-95');
+                }, 10);
+
+                return { modal, closeModal };
+            }
+
+            async function openKeywordSuggestionsModal(keyword, domainAuthority, targetUrl, focusTopics) {
+                 const content = `
+                    <p class="text-sm text-gray-600 mb-4">For "<strong class="modal-keyword">${keyword}</strong>" <span class="modal-context text-gray-500"></span></p>
+                    <div class="min-h-[200px]">
+                        <div class="loader mx-auto my-8"></div>
+                        <div class="suggestions-container space-y-2 hidden"></div>
+                    </div>
+                `;
+                const footer = `
+                    <div class="flex justify-between items-center">
+                         <div class="flex items-center space-x-2">
+                             <input type="checkbox" id="select-all-suggestions" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer">
+                             <label for="select-all-suggestions" class="text-sm text-gray-600 cursor-pointer">Select All</label>
+                        </div>
+                        <div class="flex space-x-3">
+                            <button class="add-selected-btn bg-indigo-600 text-white font-semibold py-2 px-5 rounded-lg hover:bg-indigo-700 disabled:opacity-50" disabled>Add Selected</button>
+                            <button class="add-all-btn bg-gray-200 text-gray-800 font-semibold py-2 px-5 rounded-lg hover:bg-gray-300">Add All</button>
+                        </div>
+                    </div>
+                `;
+                const { modal, closeModal } = createModal('keyword-modal', 'AI Keyword Suggestions', content, footer);
+                
+                const suggestionsContainer = modal.querySelector('.suggestions-container');
+                 const loader = modal.querySelector('.loader');
+                 try {
+                    const response = await getAISuggestions(keyword, domainAuthority, targetUrl, focusTopics);
+                    const text = response.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                    const suggestions = text.split('\n').filter(s => s.trim() !== '');
+                    suggestions.forEach((suggestion, index) => {
+                        suggestionsContainer.innerHTML += `
+                            <div class="flex items-center space-x-3 p-1 rounded-md hover:bg-gray-100">
+                                <input type="checkbox" id="suggestion-${index}" class="suggestion-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer">
+                                <label for="suggestion-${index}" class="text-gray-700 cursor-pointer flex-1">${suggestion}</label>
+                            </div>`;
+                    });
+                } catch(e) {
+                    suggestionsContainer.innerHTML = `<p class="text-red-500">Could not load suggestions. Please try again.</p>`;
+                } finally {
+                     loader.style.display = 'none';
+                     suggestionsContainer.classList.remove('hidden');
+                }
+                
+                const addKeywords = (keywords) => {
+                    if (keywords.length > 0) {
+                        const currentKeywords = keywordInput.value.trim();
+                        keywordInput.value = currentKeywords + (currentKeywords ? '\n' : '') + keywords.join('\n');
+                    }
+                    closeModal();
+                };
+
+                modal.querySelector('.add-selected-btn').addEventListener('click', () => addKeywords(
+                    Array.from(suggestionsContainer.querySelectorAll('.suggestion-checkbox:checked')).map(cb => cb.nextElementSibling.textContent)
+                ));
+                modal.querySelector('.add-all-btn').addEventListener('click', () => addKeywords(
+                    Array.from(suggestionsContainer.querySelectorAll('label')).map(label => label.textContent)
+                ));
+            }
+            
+            // --- MAIN LOGIC ---
+            runAnalysisBtn.addEventListener('click', () => {
+                const keywords = keywordInput.value.trim().split('\n').filter(k => k.trim() !== '');
+                if (keywords.length === 0) { showStatus('⚠️ Please enter at least one keyword.', 'error'); return; }
+                
+                resultsContainer.innerHTML = '';
+                resultsContainer.classList.remove('hidden');
+                
+                const domainAuthority = domainAuthorityInput.value;
+                const targetUrl = targetUrlInput.value;
+                const focusTopics = focusTopicsInput.value;
+                const selectedRegions = Array.from(regionList.querySelectorAll('input:checked'));
+
+                let headerHTML = `<div class="flex justify-between items-center mb-4 flex-wrap gap-4"><h2 class="text-2xl font-bold text-gray-800">Bulk Analysis Results</h2><div class="flex flex-wrap gap-3">`;
+                headerHTML += `<button id="exportBtn" class="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 shadow-sm"><i class="fas fa-file-csv mr-2"></i>Export as CSV</button></div></div>`;
+                resultsContainer.innerHTML = headerHTML;
+
+                const tableContainer = document.createElement('div');
+                tableContainer.className = 'bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden';
+                let tableBodyHTML = '';
+                keywords.forEach((keyword, keywordIndex) => {
+                     const sanitizedKeyword = keyword.replace(/"/g, '&quot;')
+                    tableBodyHTML += `<tr class="keyword-header bg-gray-200"><th colspan="2" class="px-4 py-2 text-left text-md font-bold text-gray-800"><i class="fas fa-tag fa-xs text-gray-500 mr-2"></i>${keyword}</th><th class="px-4 py-2 text-right"><button data-keyword="${sanitizedKeyword}" data-da="${domainAuthority}" data-url="${targetUrl}" data-topics="${focusTopics.replace(/"/g, '&quot;')}" class="suggest-keywords-btn px-3 py-1 text-xs bg-purple-100 text-purple-800 rounded-md hover:bg-purple-200"><i class="fas fa-magic-sparkles mr-1"></i>Suggest Keywords</button></th></tr>`;
+                    selectedRegions.forEach(checkbox => {
+                        const code = checkbox.value; const name = checkbox.dataset.name; const flag = checkbox.dataset.flag;
+                        const url = `https://www.google.com/search?q=${encodeURIComponent(keyword)}&gl=${code}`;
+                        const safeKeywordId = keyword.replace(/[^a-zA-Z0-9]/g, '') + keywordIndex;
+                        tableBodyHTML += `<tr class="hover:bg-gray-50" data-keyword="${sanitizedKeyword}" data-region="${name}"><td class="pl-12 pr-6 py-4 whitespace-nowrap"><span class="text-xl mr-3">${flag}</span>${name}</td><td class="px-6 py-4 whitespace-nowrap"><a href="${url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:text-indigo-900">View Search <i class="fas fa-external-link-alt text-xs ml-1"></i></a></td><td class="px-6 py-4 whitespace-nowrap"><div class="flex items-center justify-center space-x-2"><input type="radio" id="yes-${safeKeywordId}-${code}" name="aio-${safeKeywordId}-${code}" value="Yes" class="hidden"><label for="yes-${safeKeywordId}-${code}" class="radio-label cursor-pointer px-3 py-1 text-sm border-2 border-gray-200 rounded-full">Yes</label><input type="radio" id="no-${safeKeywordId}-${code}" name="aio-${safeKeywordId}-${code}" value="No" class="hidden"><label for="no-${safeKeywordId}-${code}" class="radio-label cursor-pointer px-3 py-1 text-sm border-2 border-gray-200 rounded-full">No</label></div></td></tr>`;
+                    });
+                });
+                tableContainer.innerHTML = `<div class="overflow-y-auto max-h-[65vh] custom-scrollbar"><table class="min-w-full divide-y divide-gray-200" id="analysis-table"><thead class="main-header bg-gray-100"><tr><th class="w-1/3 px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Region</th><th class="w-1/3 px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Search Link</th><th class="w-1/3 px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">AI Overview?</th></tr></thead><tbody class="bg-white divide-y divide-gray-100">${tableBodyHTML}</tbody></table></div>`;
+                resultsContainer.appendChild(tableContainer);
+
+                document.getElementById('exportBtn').addEventListener('click', exportTableToCSV);
+                
+                resultsContainer.addEventListener('click', function(event) {
+                    const button = event.target.closest('.suggest-keywords-btn');
+                    if (button) {
+                        const { keyword, da, url, topics } = button.dataset;
+                        openKeywordSuggestionsModal(keyword, da, url, topics);
+                    }
+                });
+            });
+            
+            function showStatus(message, type = 'info') {
+                statusMessage.textContent = message;
+                statusMessage.classList.remove('hidden');
+                statusMessage.className = `mt-6 text-center p-4 rounded-lg fade-in ${type === 'error' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' : 'bg-blue-100 text-blue-800 border border-blue-200'}`;
+            }
+
+            function exportTableToCSV() {
+                const table = document.getElementById('analysis-table');
+                let csv = [];
+                const rows = table.querySelectorAll("tbody tr[data-keyword]");
+                csv.push("Keyword,Region,AI Overview Found?");
+                for (const row of rows) {
+                    const keyword = `"${row.dataset.keyword}"`;
+                    const region = `"${row.dataset.region}"`;
+                    const selectedRadio = row.querySelector('input[type="radio"]:checked');
+                    const aioStatus = selectedRadio ? selectedRadio.value : "Not Recorded";
+                    csv.push([keyword, region, aioStatus].join(','));
+                }
+                const csvContent = "data:text/csv;charset=utf-8," + csv.join("\n");
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                const date = new Date().toISOString().slice(0, 10);
+                link.setAttribute("download", `bulk_aio_analysis_${date}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        });
+    </script>
+</body>
+</html>
